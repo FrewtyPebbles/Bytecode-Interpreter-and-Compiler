@@ -1,4 +1,5 @@
 mod vm;
+mod lexer;
 use vm::{vm::Executor, bytecodes::BytecodeBuilder};
 fn main() {
     let mut bb = BytecodeBuilder::new();

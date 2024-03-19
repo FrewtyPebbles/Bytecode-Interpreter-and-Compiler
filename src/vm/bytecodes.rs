@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, cell::RefCell, collections::{HashMap, HashSet}, ops::Index, rc::{Rc, Weak}};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, ops::Index, rc::{Rc, Weak}};
 
 pub const __MAX_INSTR_INT__:u32 = 0x32;
 pub const ENDL:u32 = 0xA;
