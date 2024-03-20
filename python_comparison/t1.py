@@ -1,7 +1,7 @@
 import time
 
 start = time.time_ns()
-for i in range(0,10000):
+for i in range(0,1000):
     print("Hello!")
     print("My name is William.")
 end = time.time_ns()

@@ -198,10 +198,23 @@ impl Parser {
                 "STDOUT" => {
                     bb.write_stdout(self.vars[&instr_prts[1]]);
                 },
+                "BLOCK" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_block(Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_block(None));
+                    }
+                },
+                "JUMP" => {
+                    bb.write_jump(self.vars[&instr_prts[1]]);
+                },
+                "COND_JUMP" => {
+                    bb.write_cond_jump(self.vars[&instr_prts[2]], self.vars[&instr_prts[1]]);
+                },
                 _ => {}
             }
         }
-
+        // todo: Substitute the jumps so they can be called on blocks that are defered in their initialization.
         let mut exec = Executor::new(bb.src);
         exec.run();
     }
@@ -470,6 +483,41 @@ mod tests {
                 NUM num2 2
                 LTE num3 num1 num2
                 STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_cond_jump() {
+        let mut lex = Parser::new(String::from(
+            "
+            NUM ind 0
+            NUM sum 0
+            NUM inc 1
+            NUM itterations 10
+
+            BLOCK loop
+
+
+
+            LT loopcond ind itterations
+            ADD ind ind inc
+            COND_JUMP loopcond loop
+            JUMP finished
+
+            START
+                LT loopcond ind itterations
+                COND_JUMP loopcond loop
+                BLOCK finished
+                STDOUT sum
                 STR nl \"\\n\"
                 STDOUT nl
             "
