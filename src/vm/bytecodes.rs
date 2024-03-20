@@ -31,6 +31,25 @@ pub const CAST_NUM:u32 = 0x24;
 pub const CAST_STR:u32 = 0x25;
 pub const FMT_NUM:u32 = 0x26;
 pub const START:u32 = 0x27;
+// New
+/// OPEN filevar path mode
+pub const OPEN:u32 = 0x28;
+/// CLOSE filevar
+pub const CLOSE:u32 = 0x29;
+/// READ strvar filevar
+pub const READ:u32 = 0x2A;
+/// LIST listvar item1 item2 item3
+pub const LIST:u32 = 0x2B;
+/// INDEX itemvar listvar index index
+pub const INDEX:u32 = 0x2C;
+/// STORE_INDEX listvar item index index
+pub const STORE_INDEX:u32 = 0x2D;
+/// PUSH listvar item
+pub const PUSH:u32 = 0x2E;
+/// POP topvar listvar
+pub const POP:u32 = 0x2F;
+/// WRITE filevar str
+pub const WRITE:u32 = 0x30;
 
 pub enum ByteType {
     Str(String),
