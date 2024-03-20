@@ -111,11 +111,7 @@ impl Parser {
             }
         }
         let mut exec = Executor::new(bb.src);
-        use std::time::Instant;
-        let now = Instant::now();
         exec.run();
-        let elapsed = now.elapsed();
-        println!("runtime: {:.4?}", elapsed);
     }
 }
 
@@ -134,7 +130,11 @@ mod tests {
                 STDOUT hello
             "
         ));
+        use std::time::Instant;
+        let now = Instant::now();
         lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
         assert_eq!(true, true);
     }
 }
