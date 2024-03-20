@@ -104,12 +104,62 @@ impl Parser {
                         self.vars.insert(instr_prts[1].clone(), bb.write_str(instr_prts[2].clone(), None));
                     }
                 },
+                "NUM" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_num(instr_prts[2].clone().parse::<u32>().unwrap(), Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_num(instr_prts[2].clone().parse::<u32>().unwrap(), None));
+                    }
+                },
+                "ADD" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_add(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_add(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                    }
+                },
+                "SUB" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_sub(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_sub(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                    }
+                },
+                "MUL" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_mul(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_mul(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                    }
+                },
+                "DIV" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_div(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_div(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                    }
+                },
+                "MOD" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_mod(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_mod(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                    }
+                },
+                "EXP" => {
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_exp(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                    } else {
+                        self.vars.insert(instr_prts[1].clone(), bb.write_exp(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                    }
+                },
                 "STDOUT" => {
                     bb.write_stdout(self.vars[&instr_prts[1]]);
                 },
                 _ => {}
             }
         }
+
         let mut exec = Executor::new(bb.src);
         exec.run();
     }
@@ -128,6 +178,132 @@ mod tests {
             START
                 STR hello \"Hello world!\\n\"
                 STDOUT hello
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_add() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                NUM num1 7
+                NUM num2 2
+                ADD num3 num1 num2
+                STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_sub() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                NUM num1 7
+                NUM num2 2
+                SUB num3 num1 num2
+                STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_mul() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                NUM num1 7
+                NUM num2 2
+                MUL num3 num1 num2
+                STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+    
+    #[test]
+    fn asm_test_div() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                NUM num1 7
+                NUM num2 2
+                DIV num3 num1 num2
+                STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_mod() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                NUM num1 7
+                NUM num2 2
+                MOD num3 num1 num2
+                STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_exp() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                NUM num1 7
+                NUM num2 2
+                EXP num3 num1 num2
+                STDOUT num3
+                STR nl \"\\n\"
+                STDOUT nl
             "
         ));
         use std::time::Instant;

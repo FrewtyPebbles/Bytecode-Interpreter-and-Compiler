@@ -7,7 +7,7 @@ fn main() {
     bb.write_start();
     
     let index = bb.write_num(0, None);
-    let max = bb.write_num(10000, None);
+    let max = bb.write_num(1000, None);
     let inc = bb.write_num(1, None);
     
     let h_str = bb.write_str("Hello!\n".to_string(), None);

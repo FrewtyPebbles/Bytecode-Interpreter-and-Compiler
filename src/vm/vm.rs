@@ -627,8 +627,22 @@ impl Executor {
 
     fn _stdout(&mut self) {
         let _msg = self._next().unwrap();
-        if let ScalarType::Str(msg) = self.stack.get(_msg).unwrap() {
-            print!("{}", msg);
+        match self.stack.get(_msg).unwrap() {
+            ScalarType::Str(msg) => {
+                print!("{}", msg);
+            },
+            ScalarType::Int(msg) => {
+                print!("{}", msg);
+            },
+            ScalarType::Bool(msg) => {
+                print!("{}", if (msg){ "true" } else { "false" });
+            },
+            ScalarType::Float(msg) => {
+                print!("{}", msg);
+            },
+            ScalarType::None => {
+                print!("Null");
+            }
         }
         self.bytecode._next().unwrap();
     }
