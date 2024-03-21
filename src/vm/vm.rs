@@ -437,6 +437,7 @@ impl Executor {
                         bc::ALLOCA => {self._alloca()},
                         bc::NUM => {self._num()},
                         bc::STR => {self._str()},
+                        bc::BLOCK => {self._block()},
                         bc::START => {start = true},
                         _ => ()
                     }

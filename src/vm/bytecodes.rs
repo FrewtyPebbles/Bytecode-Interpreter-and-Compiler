@@ -50,6 +50,7 @@ pub const PUSH:u32 = 0x2E;
 pub const POP:u32 = 0x2F;
 /// WRITE filevar str
 pub const WRITE:u32 = 0x30;
+pub const BOOL:u32 = 0x31;
 
 pub enum ByteType {
     Str(String),
@@ -429,6 +430,16 @@ impl BytecodeBuilder {
         };
 
         self.src.as_mut().extend(vec![ByteType::Num(STR), ByteType::Num(cid), ByteType::Str(string), ByteType::Num(ENDL)]);
+        return cid;
+    }
+
+    pub fn write_bool(&mut self, value:bool, _cid:Option<u32>) -> u32 {
+        let cid = match _cid {
+            Some(__cid) => __cid,
+            None => RefCell::borrow_mut(&self.id_manager).current_id(),
+        };
+
+        self.src.as_mut().extend(vec![ByteType::Num(BOOL), ByteType::Num(cid), ByteType::Num(value as u32), ByteType::Num(ENDL)]);
         return cid;
     }
 
