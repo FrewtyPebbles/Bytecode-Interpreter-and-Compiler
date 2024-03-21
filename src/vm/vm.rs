@@ -371,6 +371,7 @@ impl Iterator for ByteCursor {
 }
 
 pub struct Executor {
+    /// block, position
     blocks: HashMap<u32, u32>,
     bytecode: ByteCursor,
     stack: ScopeStack
@@ -386,9 +387,11 @@ impl Executor {
     }
 
     pub fn run(&mut self) {
-        for byt in self.bytecode.clone() {
+        let mut block_bytes = self.bytecode.clone();
+        while !block_bytes.finished() {
+            let byt = block_bytes._next().unwrap();
             if byt == bc::BLOCK {
-                self._block();
+                self.prerender_block(&mut block_bytes);
             }
         }
 
@@ -417,6 +420,7 @@ impl Executor {
                         bc::MOD => self._mod(),
                         bc::EXP => self._exp(),
                         bc::NUM => self._num(),
+                        bc::BOOL => self._bool(),
                         bc::STR => self._str(),
                         bc::FMT => self._fmt(),
                         bc::STDOUT => self._stdout(),
@@ -464,6 +468,13 @@ impl Executor {
         let block = self._next().unwrap();
         self.blocks.insert(block, self.bytecode.cursor as u32);
         self.bytecode._next().unwrap();
+    }
+
+    fn prerender_block(&mut self, mut bytecode:&mut ByteCursor) {
+        if let ByteType::Num(block) = bytecode._next().unwrap() {
+            self.blocks.insert(block, bytecode.cursor as u32);
+            bytecode._next().unwrap();
+        }
     }
 
     fn _alloca(&mut self) {
@@ -653,11 +664,29 @@ impl Executor {
         let mut num = String::new();
         let mut byt = self._next().unwrap();
         while byt != bc::ENDL {
-            num += format!("{}", byt).as_str();
+            match byt {
+                bc::NEGATIVE => {
+                    num.push('-');
+                }
+                bc::DOT => {
+                    num.push('.');
+                }
+                _ => {
+                    num += format!("{}", byt).as_str();
+                }
+            }
             byt = self._next().unwrap();
         }
         
         self.stack.set(cid, ScalarType::Float(num.parse::<f32>().unwrap()));
+    }
+
+    fn _bool(&mut self) {
+        let cid = self._next().unwrap();
+        let tf = self._next().unwrap();
+        
+        self.stack.set(cid, ScalarType::Bool(if tf == 1 {true} else {false}));
+        self.bytecode._next().unwrap();
     }
 
     fn _str(&mut self) {

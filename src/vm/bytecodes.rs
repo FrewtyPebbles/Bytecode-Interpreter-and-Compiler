@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::{HashMap, HashSet}, ops::Index, rc::{Rc, Weak}};
 
-pub const __MAX_INSTR_INT__:u32 = 0x32;
+pub const __MAX_INSTR_INT__:u32 = 0x34;
 pub const ENDL:u32 = 0xA;
 pub const ALLOCA:u32 = 0xB;
 pub const STORE:u32 = 0xC;
@@ -50,8 +50,14 @@ pub const PUSH:u32 = 0x2E;
 pub const POP:u32 = 0x2F;
 /// WRITE filevar str
 pub const WRITE:u32 = 0x30;
+
 pub const BOOL:u32 = 0x31;
 
+pub const DOT:u32 = 0x32;
+
+pub const NEGATIVE:u32 = 0x33;
+
+#[derive(Debug)]
 pub enum ByteType {
     Str(String),
     Num(u32)
@@ -212,71 +218,57 @@ impl BytecodeBuilder {
         return new_vec;
     }
 
-    pub fn write_eq(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
+    fn get_cid(&mut self, cid:Option<u32>) -> u32 {
+        return match cid {
             Some(__cid) => __cid,
             None => RefCell::borrow_mut(&self.id_manager).current_id(),
         };
+    }
+
+    pub fn write_eq(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![EQ, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_gt(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![GT, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_lt(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![LT, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_gte(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![GTE, cid, lhs, rhs, ENDL]));
         return cid;
     }
     
     pub fn write_lte(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![LTE, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_neq(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![NEQ, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_alloca(&mut self, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![ALLOCA, cid, ENDL]));
         return cid;
@@ -297,60 +289,42 @@ impl BytecodeBuilder {
     }
 
     pub fn write_add(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![ADD, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_sub(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![SUB, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_mul(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![MUL, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_div(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![DIV, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_exp(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![EXP, cid, lhs, rhs, ENDL]));
         return cid;
     }
 
     pub fn write_mod(&mut self, lhs:u32, rhs:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![MOD, cid, lhs, rhs, ENDL]));
         return cid;
@@ -367,10 +341,7 @@ impl BytecodeBuilder {
     }
 
     pub fn write_block(&mut self, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![BLOCK, cid, ENDL]));
         return cid;
@@ -388,76 +359,70 @@ impl BytecodeBuilder {
         self.src.as_mut().append(ByteType::Num(START));
     }
 
-    pub fn write_num(&mut self, _num:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+    pub fn write_num(&mut self, _num:f32, _cid:Option<u32>) -> u32 {
+        let cid = self.get_cid(_cid);
 
         let mut num = vec![];
         for i in _num.to_string().chars() {
-            num.push(i.to_digit(10).unwrap());
+            match i {
+                '.' => {
+                    num.push(DOT);
+                }
+                '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9' => {
+                    num.push(i.to_digit(10).unwrap());
+                }
+                '-' => {
+                    num.push(NEGATIVE);
+                }
+                _ => {
+                    panic!("NUM type only includes numbers")
+                }
+            }
         }
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![vec![NUM, cid].as_slice(), num.as_slice(), vec![ENDL].as_slice()].concat()));
         return cid;
     }
 
+    pub fn write_bool(&mut self, _bool:bool, _cid:Option<u32>) -> u32 {
+        let cid = self.get_cid(_cid);
+
+        let mut tf = if _bool {ByteType::Num(1)} else {ByteType::Num(0)};
+
+        self.src.as_mut().extend(vec![ByteType::Num(BOOL), ByteType::Num(cid), tf, ByteType::Num(ENDL)]);
+        return cid;
+    }
+
     pub fn write_cast_num(&mut self, id:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![CAST_NUM, cid, id, ENDL]));
         return cid;
     }
 
     pub fn write_cast_str(&mut self, id:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![CAST_STR, cid, id, ENDL]));
         return cid;
     }
 
     pub fn write_str(&mut self, string:String, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(vec![ByteType::Num(STR), ByteType::Num(cid), ByteType::Str(string), ByteType::Num(ENDL)]);
         return cid;
     }
 
-    pub fn write_bool(&mut self, value:bool, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
-
-        self.src.as_mut().extend(vec![ByteType::Num(BOOL), ByteType::Num(cid), ByteType::Num(value as u32), ByteType::Num(ENDL)]);
-        return cid;
-    }
-
     pub fn write_fmt(&mut self, string:u32, items:Vec<u32>, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![vec![FMT, cid, string].as_slice(), items.as_slice(), vec![ENDL].as_slice()].concat()));
         return cid;
     }
 
     pub fn write_fmt_num(&mut self, num:u32, precision:u32, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![FMT_NUM, cid, num, precision, ENDL]));
         return cid;
@@ -468,10 +433,7 @@ impl BytecodeBuilder {
     }
 
     pub fn write_stdin(&mut self, _cid:Option<u32>) -> u32 {
-        let cid = match _cid {
-            Some(__cid) => __cid,
-            None => RefCell::borrow_mut(&self.id_manager).current_id(),
-        };
+        let cid = self.get_cid(_cid);
 
         self.src.as_mut().extend(Self::conv_vec_bt_num(vec![STDIN, cid, ENDL]));
         return cid;

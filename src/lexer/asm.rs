@@ -8,6 +8,31 @@ pub struct Parser {
     vars:HashMap<String, u32>
 }
 
+macro_rules! escape_character {
+    ($c:expr, $esc:expr, $escape:ident, $string:ident) => {
+        {
+            if $escape {
+                $string.push($esc);
+                $escape = false;
+            } else {
+                $string.push($c);
+            }
+        }
+    };
+}
+
+macro_rules! binary_emit {
+    ($self:ident, $emit:ident, $instr_prts:ident, $bb:ident) => {
+        {
+            if $self.vars.contains_key(&$instr_prts[1]) {
+                $bb.$emit($self.vars[&$instr_prts[2]], $self.vars[&$instr_prts[3]], Some($self.vars[&$instr_prts[1]]));
+            } else {
+                $self.vars.insert($instr_prts[1].clone(), $bb.$emit($self.vars[&$instr_prts[2]], $self.vars[&$instr_prts[3]], None));
+            }
+        }
+    };
+}
+
 impl Parser {
     pub fn new(src:String) -> Parser {
         return Parser { src:src, vars:HashMap::new()};
@@ -56,22 +81,10 @@ impl Parser {
                         return string;
                     }
                 },
-                'n' => {
-                    if escape {
-                        string.push('\n');
-                        escape = false;
-                    } else {
-                        string.push('n');
-                    }
-                },
-                't' => {
-                    if escape {
-                        string.push('\t');
-                        escape = false;
-                    } else {
-                        string.push('t');
-                    }
-                }
+                'n' => escape_character!('n', '\n', escape, string),
+                't' => escape_character!('t', '\t', escape, string),
+                'r' => escape_character!('r', '\r', escape, string),
+                '0' => escape_character!('0', '\0', escape, string),
                 _ => {
                     string.push(c);
                 }
@@ -84,6 +97,7 @@ impl Parser {
         let mut src = self.src.clone();
         let instructions = src.lines();
         let mut bb = BytecodeBuilder::new();
+        let mut jumps:HashMap<usize, String> = HashMap::new();
         for raw_instr in instructions {
             let instr = raw_instr.trim().to_string();
             if instr == "" || instr.starts_with("#") {
@@ -106,95 +120,31 @@ impl Parser {
                 },
                 "NUM" => {
                     if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_num(instr_prts[2].clone().parse::<u32>().unwrap(), Some(self.vars[&instr_prts[1]]));
+                        bb.write_num(instr_prts[2].clone().parse::<f32>().unwrap(), Some(self.vars[&instr_prts[1]]));
                     } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_num(instr_prts[2].clone().parse::<u32>().unwrap(), None));
+                        self.vars.insert(instr_prts[1].clone(), bb.write_num(instr_prts[2].clone().parse::<f32>().unwrap(), None));
                     }
                 },
-                "ADD" => {
+                "BOOL" => {
+                    let value = if instr_prts[2]=="true" {true} else if instr_prts[2]=="false" {false} else {panic!("BOOL value must be either `true` or `false`.")};
                     if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_add(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
+                        bb.write_bool(value, Some(self.vars[&instr_prts[1]]));
                     } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_add(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
+                        self.vars.insert(instr_prts[1].clone(), bb.write_bool(value, None));
                     }
                 },
-                "SUB" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_sub(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_sub(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "MUL" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_mul(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_mul(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "DIV" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_div(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_div(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "MOD" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_mod(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_mod(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "EXP" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_exp(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_exp(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "EQ" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_eq(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_eq(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "NEQ" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_neq(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_neq(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "GT" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_gt(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_lt(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "LT" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_lt(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_lt(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "GTE" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_gte(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_gte(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
-                "LTE" => {
-                    if self.vars.contains_key(&instr_prts[1]) {
-                        bb.write_lte(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], Some(self.vars[&instr_prts[1]]));
-                    } else {
-                        self.vars.insert(instr_prts[1].clone(), bb.write_lte(self.vars[&instr_prts[2]], self.vars[&instr_prts[3]], None));
-                    }
-                },
+                "ADD" => binary_emit!(self, write_add, instr_prts, bb),
+                "SUB" => binary_emit!(self, write_sub, instr_prts, bb),
+                "MUL" => binary_emit!(self, write_mul, instr_prts, bb),
+                "DIV" => binary_emit!(self, write_div, instr_prts, bb),
+                "MOD" => binary_emit!(self, write_mod, instr_prts, bb),
+                "EXP" => binary_emit!(self, write_exp, instr_prts, bb),
+                "EQ" => binary_emit!(self, write_eq, instr_prts, bb),
+                "NEQ" => binary_emit!(self, write_neq, instr_prts, bb),
+                "GT" => binary_emit!(self, write_gt, instr_prts, bb),
+                "LT" => binary_emit!(self, write_lt, instr_prts, bb),
+                "GTE" => binary_emit!(self, write_gte, instr_prts, bb),
+                "LTE" => binary_emit!(self, write_lte, instr_prts, bb),
                 "STDOUT" => {
                     bb.write_stdout(self.vars[&instr_prts[1]]);
                 },
@@ -206,15 +156,28 @@ impl Parser {
                     }
                 },
                 "JUMP" => {
-                    bb.write_jump(self.vars[&instr_prts[1]]);
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_jump(self.vars[&instr_prts[1]]);
+                    } else {
+                        bb.write_jump(0);
+                        jumps.insert(bb.src.len() - 1, instr_prts[1].clone());
+                    }
                 },
                 "COND_JUMP" => {
-                    bb.write_cond_jump(self.vars[&instr_prts[2]], self.vars[&instr_prts[1]]);
+                    if self.vars.contains_key(&instr_prts[1]) {
+                        bb.write_cond_jump(self.vars[&instr_prts[2]], self.vars[&instr_prts[1]]);
+                    } else {
+                        bb.write_cond_jump(0, self.vars[&instr_prts[1]]);
+                        jumps.insert(bb.src.len() - 3, instr_prts[1].clone());
+                    }
                 },
                 _ => {}
             }
         }
         // todo: Substitute the jumps so they can be called on blocks that are defered in their initialization.
+        for (key, val) in jumps.iter() {
+            bb.src.set(*key, self.vars[val]);
+        }
         let mut exec = Executor::new(bb.src);
         exec.run();
     }
@@ -240,7 +203,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -261,7 +223,24 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_bool() {
+        let mut lex = Parser::new(String::from(
+            "
+            START
+                BOOL mybool true
+                STDOUT mybool
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
     }
 
     #[test]
@@ -282,7 +261,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -303,7 +281,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
     
     #[test]
@@ -324,7 +301,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -345,7 +321,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -366,7 +341,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -387,7 +361,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -408,7 +381,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -429,7 +401,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -450,7 +421,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -471,7 +441,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -492,7 +461,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -502,14 +470,15 @@ mod tests {
             NUM ind 0
             NUM sum 0
             NUM inc 1
-            NUM itterations 10
+            NUM itterations 1000
+            STR nl \"\\n\"
 
             BLOCK loop
 
+                ADD sum sum ind
 
-
-            LT loopcond ind itterations
             ADD ind ind inc
+            LT loopcond ind itterations
             COND_JUMP loopcond loop
             JUMP finished
 
@@ -518,7 +487,6 @@ mod tests {
                 COND_JUMP loopcond loop
                 BLOCK finished
                 STDOUT sum
-                STR nl \"\\n\"
                 STDOUT nl
             "
         ));
@@ -527,7 +495,6 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 
     #[test]
@@ -560,6 +527,5 @@ mod tests {
         lex.run();
         let elapsed = now.elapsed();
         println!("runtime: {:.4?}", elapsed);
-        assert_eq!(true, true);
     }
 }

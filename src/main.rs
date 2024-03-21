@@ -1,31 +1,38 @@
 mod vm;
 mod lexer;
 use vm::{vm::Executor, bytecodes::BytecodeBuilder};
+
+use crate::lexer::asm::Parser;
 fn main() {
-    let mut bb = BytecodeBuilder::new();
-    
-    bb.write_start();
-    
-    let index = bb.write_num(0, None);
-    let max = bb.write_num(1000, None);
-    let inc = bb.write_num(1, None);
-    
-    let h_str = bb.write_str("Hello!\n".to_string(), None);
-    let h_str2 = bb.write_str("My name is William.\n".to_string(), None);
-    
+    let mut lex = Parser::new(String::from(
+        "
+        NUM ind 0
+        NUM sum 0
+        NUM inc 1
+        NUM adder -1.289893
+        NUM itterations 1000
+        STR nl \"\\n\"
 
-    let block = bb.write_block(None);
-    bb.write_stdout(h_str);
-    bb.write_stdout(h_str2);
-    
-    let lt = bb.write_lt(index, max, None);
-    bb.write_add(index, inc, Some(index));
-    bb.write_cond_jump(block, lt);
+        BLOCK loop
+            MUL additive ind adder
+            ADD sum sum additive
 
-    let mut exec = Executor::new(bb.src);
+        ADD ind ind inc
+        LT loopcond ind itterations
+        COND_JUMP loopcond loop
+        JUMP finished
+
+        START
+            LT loopcond ind itterations
+            COND_JUMP loopcond loop
+            BLOCK finished
+            STDOUT sum
+            STDOUT nl
+        "
+    ));
     use std::time::Instant;
     let now = Instant::now();
-    exec.run();
+    lex.run();
     let elapsed = now.elapsed();
     println!("runtime: {:.4?}", elapsed);
 }
