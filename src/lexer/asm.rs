@@ -496,7 +496,7 @@ mod tests {
     }
 
     #[test]
-    fn asm_test_cond_jump() {
+    fn asm_test_cond_jump_prerender() {
         let mut lex = Parser::new(String::from(
             "
             NUM ind 0
@@ -517,6 +517,39 @@ mod tests {
                 LT loopcond ind itterations
                 COND_JUMP loopcond loop
                 BLOCK finished
+                STDOUT sum
+                STR nl \"\\n\"
+                STDOUT nl
+            "
+        ));
+        use std::time::Instant;
+        let now = Instant::now();
+        lex.run();
+        let elapsed = now.elapsed();
+        println!("runtime: {:.4?}", elapsed);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn asm_test_cond_jump() {
+        let mut lex = Parser::new(String::from(
+            "
+            NUM ind 0
+            NUM sum 0
+            NUM inc 1
+            NUM itterations 10
+
+            BLOCK loop
+
+                ADD sum sum ind
+
+            LT loopcond ind itterations
+            ADD ind ind inc
+            COND_JUMP loopcond loop
+
+            START
+                LT loopcond ind itterations
+                COND_JUMP loopcond loop
                 STDOUT sum
                 STR nl \"\\n\"
                 STDOUT nl
